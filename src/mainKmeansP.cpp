@@ -1,5 +1,7 @@
 #include <stdlib.h>
+#include <math.h>
 #include <stdio.h>
+#include <mpi.h>
 #include <unistd.h>
 #include <time.h>
 #include <sys/time.h>
@@ -8,17 +10,73 @@
 //#include "image_io.h"
 
 #define DEFAULT_N_CLUSTS 4
+#define DEFAULT_IMAGES 20
 #define DEFAULT_MAX_ITERS 150
 #define DEFAULT_N_THREADS 2
 #define DEFAULT_OUT_PATH "result.jpg"
 
 double get_time();
 void print_exec(int width, int height, int n_ch, int n_clus, int n_threads, int n_iters, double sse, double exec_time);
+int loadImages(int n, int id, int p);
+int kmeans(int n_image);
 
-int main(int argc, char **argv)
+int main ( int argc, char *argv[] )
 {
-    char *in_path = NULL;
-    char *out_path = DEFAULT_OUT_PATH;
+  int id;
+  int ierr;
+  int n = DEFAULT_IMAGES;
+  int p;
+  int result;
+
+/*
+  Inicializamos MPI.
+*/
+  ierr = MPI_Init ( &argc, &argv );
+/*
+  Obtener el numero de procesos.
+*/
+  ierr = MPI_Comm_size ( MPI_COMM_WORLD, &p );
+/*
+  Obtener el id del proceso.
+*/
+  ierr = MPI_Comm_rank ( MPI_COMM_WORLD, &id );
+
+    // ierr = MPI_Bcast ( &n, 1, MPI_INT, 0, MPI_COMM_WORLD );
+
+    result = loadImages ( n, id, p );
+
+    // ierr = MPI_Reduce ( &result, &primes, 1, MPI_INT, MPI_SUM, 0, 
+    //   MPI_COMM_WORLD );
+
+  
+/*
+  Terminate MPI.
+*/
+  ierr = MPI_Finalize ( );
+/*
+  Terminate.
+*/
+
+  return 0;
+}
+
+int loadImages(int n, int id, int p){
+    std::cout<<"loading "<<n<<" "<<id<<" "<<p<<" "<<std::endl;
+    int images = n/p;
+    int first = 1 + (images * id);
+    std::cout<<first<<std::endl;
+    for(int i = 0; i<images ; i++){
+        kmeans(first);
+        first++;
+    }
+
+    return 1;
+}
+
+int kmeans(int n_image)
+{
+    char *in_path = (char *)malloc( 20 * sizeof(char));
+    char *out_path = (char *)malloc( 20 * sizeof(char));
     byte_t *data;
     int width, height, n_ch;
     int n_clus = DEFAULT_N_CLUSTS;
@@ -29,56 +87,16 @@ int main(int argc, char **argv)
 
     // Analizamos argumentos y parámetros opcionales
 
-    char optchar;
-    while ((optchar = getopt(argc, argv, "k:m:o:t:h")) != -1) {
-        switch (optchar) {
-            case 'k': // num clusters k 
-                n_clus = strtol(optarg, NULL, 10);
-                break;
-            case 'm': // max iterations
-                n_iters = strtol(optarg, NULL, 10);
-                break;
-            case 'o': //image output
-                out_path = optarg;
-                break;
-            case 't': //num threads
-                n_threads = strtol(optarg, NULL, 10);
-                break;
-            default:
-                exit(EXIT_FAILURE);
-                break;
-        }
-    }
+    strcpy (in_path,std::to_string(n_image).c_str());
+    strcat (in_path,"_image.jpg");
 
-    in_path = argv[optind];
-
-    // Validating input parameters
-
-    if (in_path == NULL) {
-        fprintf(stderr, "INPUT ERROR: << Path is NULL >> \n");
-        exit(EXIT_FAILURE);
-    }
-
-    if (n_clus < 2) {
-        fprintf(stderr, "INPUT ERROR: << Invalid number of clusters >> \n");
-        exit(EXIT_FAILURE);
-    }
-
-    if (n_iters < 1) {
-        fprintf(stderr, "INPUT ERROR: << Invalid maximum number of iterations >> \n");
-        exit(EXIT_FAILURE);
-    }
-
-    if (n_threads < 2) {
-        fprintf(stderr, "INPUT ERROR: << Invalid number of threads >> \n");
-        exit(EXIT_FAILURE);
-    }
 
     srand(seed);
 
     // Scanning input image
 
     data = img_load(in_path, &width, &height, &n_ch);
+    std::cout<<in_path<<std::endl;
 
     // Executing k-means segmentation
 
@@ -91,8 +109,13 @@ int main(int argc, char **argv)
 
     // Saving and printing results
 
+    strcpy (out_path,std::to_string(n_image).c_str());
+    strcat (out_path,"_result.jpg");
+
+    std::cout<<out_path<<std::endl;
+
     img_save(out_path, data, width, height, n_ch);
-    print_exec(width, height, n_ch, n_clus, n_threads, n_iters, sse, exec_time);
+    // print_exec(width, height, n_ch, n_clus, n_threads, n_iters, sse, exec_time);
 
     free(data);
 
