@@ -88,3 +88,36 @@ Pasos para la conexion distribuida con hamachi:
 ### 2.3 Encender servidor Hamachi
 ### 2.4 Ingresar con id y password
 ##### Ingresar con el id y password del paso 2.2 el cual les asignará automáticamente una ip el cual se deberá cambiar el archivo de autenticación
+Pasos para la instalación de MPI
+### 3.1 Instalar gcc
+    sudo apt-get install gcc
+### 3.2 Instalar OpenMPI
+    sudo apt-get install openmpi-bin openmpi-common libopenmpi-dev libgtk2.0-dev
+### 3.3 Descargar OpenMPI
+    https://www.open-mpi.org/software/ompi/v4.1/
+### 3.4 Descomprimir OpenMPI:
+##### Reemplazar "mpiuser" por el nombre de la máquina y "nombredelarchivo" por el nombre y versión del OpenMPI
+    tar -xvf /home/mpiuser/nombredelarchivo
+### 3.5 Seguir los comandos de configuración:
+##### Reemplazar "nombredelarchivo" por el nombre y versión del OpenMPI
+     cd nombredelarchivo
+    ./configure --prefix="/home/mpiuser/.openmpi"
+    make
+    sudo make install
+### 3.6 Exportar el PATH
+    export PATH="$PATH:/home/mpiuser/.openmpi/bin"
+    export LD_LIBRARY_PATH? "$LD_LIBRARY_PATH:/home/mpiuser/.openmpi/lib"
+### 3.7 Validar instalación del MPI
+    mpicc
+    mpirun
+### 3.8 Moificar hosts
+    sudo gedit /etc/hosts
+##### Ingresar la ip seguido del nombre (tanto del usuario como del master)
+##### Ejemplo: 192.168.1.6 slave1
+##### Ejemplo: 192.168.1.24 master
+    
+Compilar el archivo:
+### 4.1 Comando para compilar el archivo
+    mpiCC src/mainKmeansP.cpp src/image_io.h src/image_io.cpp src/Kmeans_omp.cpp -Wall -fopenmp -g -o ./outputfile -lm
+### 4.2 Comando para ejecutar el archivo
+    mpirun --hostfile /etc/hosts -np 4 ./outputfile
