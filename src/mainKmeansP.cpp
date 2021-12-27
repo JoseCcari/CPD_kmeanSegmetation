@@ -41,13 +41,7 @@ int main ( int argc, char *argv[] )
 */
   ierr = MPI_Comm_rank ( MPI_COMM_WORLD, &id );
 
-    // ierr = MPI_Bcast ( &n, 1, MPI_INT, 0, MPI_COMM_WORLD );
-
-    result = loadImages ( n, id, p );
-
-    // ierr = MPI_Reduce ( &result, &primes, 1, MPI_INT, MPI_SUM, 0, 
-    //   MPI_COMM_WORLD );
-
+  result = loadImages ( n, id, p );
   
 /*
   Terminate MPI.
